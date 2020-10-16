@@ -47,7 +47,7 @@ jsPsych.plugins["bRMS"] = (function () {
             timing_response: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Timing response',
-                default: 0,
+                default: 10,
                 description: "Maximum time duration allowed for response"
             },
             choices: {
@@ -85,19 +85,19 @@ jsPsych.plugins["bRMS"] = (function () {
             stimulus_duration: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: '',
-                default: 1000,
+                default: 33,
                 description: ""
             },
             gap_duration: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: '',
-                default: 1000,
+                default: 100,
                 description: ""
             },
             mask_duration: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: '',
-                default: 5000,
+                default: 67,
                 description: ""
             },
             stimulus_width: {
@@ -239,7 +239,7 @@ jsPsych.plugins["bRMS"] = (function () {
         let nAgt = navigator.userAgent;
         let browser = navigator.appName;
         let version = '' + parseFloat(navigator.appVersion);
-        let majorVersion = parseInt(navigator.appVersion, 10);
+        let majorVersion;
         let nameOffset, verOffset, ix;
 
         // Opera
@@ -601,8 +601,8 @@ jsPsych.plugins["bRMS"] = (function () {
                         }
                     } else {
                         if (current_time < trial.fade_in_time) {
-                            stimulus.style.opacity = (current_time / (trial.fade_in_time)) *
-                                trial.stimulus_opacity;
+                            stimulus.style.opacity =
+                                (current_time / (trial.fade_in_time)) * trial.stimulus_opacity;
                         } else {
                             stimulus.style.opacity = trial.stimulus_opacity;
                         }

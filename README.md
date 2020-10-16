@@ -1,1 +1,1 @@
-# RMSjsPsychPlugin
+# jsPsychRmsPlugin
