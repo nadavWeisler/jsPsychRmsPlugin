@@ -412,8 +412,8 @@ jsPsych.plugins["bRMS"] = (function () {
             let startCompute = Date.now();
 
             // Hide mouse
-            let stylesheet = document.styleSheets[0];
-            stylesheet.insertRule("* {cursor: none;}", stylesheet.cssRules.length);
+
+            document.body.style.cursor = "none";
             const div_length = document.getElementById("dpiDiv").clientHeight;
             const rectangleWidth = trial.rectangle_width * div_length;
             const rectangleHeight = trial.rectangle_height * div_length;
@@ -457,53 +457,6 @@ jsPsych.plugins["bRMS"] = (function () {
                     jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
                 }
 
-                // Analyse animation performance
-                tvbl = {};
-                tvbl['time'] = vbl['time'].filter(function (value, index) {
-                    return vbl['mondrian_number'][index] >= 0;
-                });
-                tvbl['mondrian_number'] = vbl['mondrian_number'].filter(function (value, index) {
-                    return vbl['mondrian_number'][index] >= 0
-                });
-                tvbl['mondrian_alpha'] = vbl['mondrian_alpha'].filter(function (value, index) {
-                    return vbl['mondrian_number'][index] >= 0
-                });
-
-                tvbl['refresh'] = [];
-                for (i = 0; i < tvbl['time'].length; i++) {
-                    tvbl['refresh'].push(tvbl['time'][i + 1] - tvbl['time'][i]);
-                } // get differential time stamps
-
-                function onlyUnique(value, index, self) {
-                    return self.indexOf(value) === index;
-                } // get unique mondrian numbers
-
-                mond = {}; // represent vbl per mondrian
-                mond['nums'] = tvbl['mondrian_number'].filter(onlyUnique);
-
-                mond['mondrian_duration'] = [];
-                mond['stimulus_duration'] = [];
-                for (i = 0; i < mond['nums'].length; i++) {
-                    mond['mondrian_duration'].push(tvbl['refresh'].filter(function (value, index) {
-                        return tvbl['mondrian_number'][index] === mond['nums'][i] && tvbl['mondrian_alpha'][index] > 0
-                    }).reduce((a, b) => a + b, 0));
-                    mond['stimulus_duration'].push(tvbl['refresh'].filter(function (value, index) {
-                        return tvbl['mondrian_number'][index] === mond['nums'][i] &&
-                            tvbl['mondrian_alpha'][index] === 0
-                    }).reduce((a, b) => a + b, 0));
-                }
-                // some vbl refresh separately for mondrian and stim for each presentation
-
-                bProblem = mond['nums'].filter(function (value, index) {
-                    return mond['mondrian_duration'][index] > trial.bigProblemDuration & value > 0 ||
-                        mond['stimulus_duration'][index] > trial.bigProblemDuration
-                }).length; // Count instances of lag in animation
-                sProblem = mond['nums'].filter(function (value, index) {
-                    return mond['stimulus_duration'][index] > trial.smallProblemStimDuration &&
-                        (mond['mondrian_duration'][index] < trial.smallProblemMondDuration ||
-                            mond['mondrian_duration'][index + 1] < trial.smallProblemMondDuration)
-                }).length; // Count instances of stimulus presented for too long.
-
                 let fullscreen = false;
                 if ((window.fullScreen) ||
                     (window.innerWidth === screen.width && window.innerHeight === screen.height)) {
@@ -543,7 +496,7 @@ jsPsych.plugins["bRMS"] = (function () {
                 display_element.innerHTML = '';
 
                 // Return mouse
-                stylesheet.deleteRule(stylesheet.cssRules.length - 1);
+                document.body.style.cursor = "pointer";
 
                 // move on to the next trial
                 setTimeout(function () {
@@ -731,32 +684,7 @@ jsPsych.plugins["bRMS"] = (function () {
                 mondrian_number: []
             };
             let trial_began = 0;
-            let d = new Date();
-            let j = 0;
-            let timelineMax = new TimelineMax({
-                paused: true,
-                onUpdate: function () {
-                    let op1 = parseFloat(mondrian_list[j % trial.mondrianNum].style.opacity),
-                        op2 = parseFloat(mondrian_list[(j + 1) % trial.mondrianNum].style.opacity);
-                    if (op1 === 0 && op2 > 0) {
-                        j++
-                    }
-
-                    vbl['time'].push(Math.round(performance.now()));
-                    vbl['mondrian_alpha'].push(op1 + op2);
-                    vbl['mondrian_number'].push(j);
-                },
-                onStart: function () {
-                    let op1 = parseFloat(mondrian_list[1 % trial.mondrianNum].style.opacity),
-                        op2 = parseFloat(mondrian_list[(1 + 1) % trial.mondrianNum].style.opacity);
-
-                    trial_began = d.getTime();
-                    vbl['time'].push(Math.round(performance.now()));
-                    vbl['mondrian_alpha'].push(op1 + op2);
-                    vbl['mondrian_number'].push(-1);
-                },
-            });
-
+        
             /// Create mondrian's alpha profile
             let mondrian_profiles = CreateMondrianProfiles(maxFlips, fade_out_flip,
                 regularFlip, trial.mondrian_max_opacity,
