@@ -1,42 +1,161 @@
-jsPsych.plugins["bRMS"] = (function () {
+class Fixation {
+    constructor(fixation_width, fixation_height, fixation_color) {
+        this.width = fixation_width;
+        this.height = fixation_height;
+        this.color = fixation_color;
+        this.draw = function (context, canvas) {
+            context.save();
+            context.fillStyle = this.color;
+            context.fillRect((canvas.width - this.width) / 2, (canvas.height - this.height) / 2, this.width, this.height);
+            context.fillRect(
+                (canvas.width - this.height) / 2,
+                (canvas.height - this.width) / 2,
+                this.height, this.width);
+            context.restore();
+        };
+    }
+}
+
+class Stimulus {
+    constructor(stimulus_width, stimulus_height, stimulus_src, stimulus_side) {
+        this.width = Number(stimulus_width);
+        this.height = Number(stimulus_height);
+        this.src = stimulus_src;
+        this.side = stimulus_side;
+        this.img = new Image();
+        this.img.id = 'stimulus_img';
+        this.img.src = this.src;
+        this.img.onload = function () {
+            console.log('Stimulus image preloaded:', this.src);
+        };
+        this.draw = function (context, canvas, stimulus_opacity) {
+            context.save();
+            let stimulus_location = GetStimulusLocation(this.side, canvas);
+
+            context.globalAlpha = Number(stimulus_opacity); // Reusing opacity value if it doesn't change
+
+            if (this.side > 1) {
+                context.drawImage(this.img, 0, stimulus_location, this.width, this.height);
+            } else {
+                context.drawImage(this.img, stimulus_location, 0, this.width, this.height);
+            }
+
+            context.restore();
+        };
+    }
+}
+
+class Mondrian {
+    constructor(rectangle_width, rectangle_height, rectangle_count, rectangle_colors, frame_width, frame_height) {
+        this.rectangle_width = Number(rectangle_width);
+        this.rectangle_height = Number(rectangle_height);
+        this.rectangle_count = Number(rectangle_count);
+        this.rectangle_colors = rectangle_colors;
+        this.frame_width = Number(frame_width);
+        this.frame_height = Number(frame_height);
+        this.range = [-this.rectangle_width, -this.rectangle_height,
+        this.frame_width + this.rectangle_width, this.frame_height + this.rectangle_height];
+        this.random_index = 0;
+        this.random_numbers = [];
+        for (let i = 0; i < this.rectangle_count * 10; i++) {
+            this.random_numbers.push(Math.random());
+        }
+
+        this.get_random_number = function () {
+            let random_number = this.random_numbers[this.random_index];
+            // Increment the index and wrap around if it goes beyond the length of the array
+            this.random_index = (this.random_index + 1) % this.random_numbers.length;
+            return random_number;
+        }
+
+        this.draw = function (context, mondrian_opacity) {
+            context.save();
+            if(mondrian_opacity < 1) {
+                console.log(mondrian_opacity);
+            }
+            context.globalAlpha = Number(mondrian_opacity);
+            for (let i = 0; i < this.rectangle_count; i++) {
+                const x = Math.floor(this.get_random_number() * (this.range[2] - this.range[0]) + this.range[0]);
+                const y = Math.floor(this.get_random_number() * (this.range[3] - this.range[1]) + this.range[1]);
+                const width = this.rectangle_width + Math.floor(this.get_random_number() * this.rectangle_width);
+                const height = this.rectangle_height + Math.floor(this.get_random_number() * this.rectangle_height);
+                context.fillStyle = this.rectangle_colors[Math.floor(this.get_random_number() * this.rectangle_colors.length)];
+                context.fillRect(x, y, width, height);
+            }
+            context.restore();
+        };
+    }
+}
+
+function GetStimulusSide(trial_stimulus_side, orientation = 'h') {
+    if (trial_stimulus_side >= 0) {
+        return trial_stimulus_side
+    } else {
+        let max_int = 2;
+        let min_int = 0;
+        if ((orientation === 'v') || (orientation === 'b')) {
+            max_int = 4;
+            if (orientation === 'v') {
+                min_int = 2;
+            }
+        }
+        min_int = Math.ceil(min_int);
+        max_int = Math.floor(max_int);
+        // Get random integer between min_int and max_int
+        return Math.floor(Math.random() * (max_int - min_int)) + min_int;
+    }
+}
+
+function GetStimulusLocation(stimulus_side, canvas) {
+    let stimulus_location;
+    if (stimulus_side === 0) {
+        stimulus_location = (3 * canvas.width / 4) - (canvas.height / 2);
+    } else if (stimulus_side === 1) {
+        stimulus_location = (canvas.width / 4) - (canvas.height / 2);
+    } else if (stimulus_side === 2) {
+        stimulus_location = 0;
+    } else if (stimulus_side === 3) {
+        stimulus_location = (canvas.height / 2) + (canvas.width / 2) + 5;
+    }
+    return Number(stimulus_location);
+}
+
+function GetNewCanvas(id, class_name, canvas_width, canvas_height, canvas_position, canvas_visibility) {
+    let newCanvas = document.createElement('canvas');
+    newCanvas.id = id;
+    newCanvas.className = class_name;
+    newCanvas.width = canvas_width;
+    newCanvas.height = canvas_height;
+    newCanvas.style.position = canvas_position;
+    newCanvas.style.visibility = canvas_visibility;
+    return newCanvas;
+}
+
+jsPsych.plugins["rms"] = (function () {
     let plugin = {};
 
     plugin.info = {
-        name: 'bRMS',
-        description: '',
+        name: 'RMS',
+        description: 'Repeated Mask Suppression (RMS) task',
         parameters: {
-            visUnit: {
-                type: jsPsych.plugins.parameterType.INT,
-                pretty_name: 'Visual unit size',
-                default: 1,
-                description: "Multiplier for manual stimulus size adjustment. Should be\
-         deprecated with new jspsych's native solution."
-            },
-            colorOpts: {
+            colors: {
                 type: jsPsych.plugins.parameterType.COMPLEX,
                 pretty_name: 'Color palette',
-                default: ['#FF0000', '#00FF00', '#0000FF',
-                    '#FFFF00', '#FF00FF', '#00FFFF'
+                default: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'
                 ],
                 description: "Colors for the Mondrian"
             },
-            count: {
-                type: jsPsych.plugins.parameterType.INT,
-                pretty_name: 'Experiment count',
-                default: 0,
-                description: ""
-            },
-            rectNum: {
+            rectangle_count: {
                 type: jsPsych.plugins.parameterType.INT,
                 pretty_name: 'Rectangle number',
                 default: 500,
                 description: "Number of rectangles in Mondrian"
             },
-            mondrianNum: {
+            mondrians_count: {
                 type: jsPsych.plugins.parameterType.INT,
                 pretty_name: 'Mondrian number',
                 default: 50,
-                description: "Number of unique mondrians to create"
+                description: "Number of Mondrians"
             },
             mondrian_max_opacity: {
                 type: jsPsych.plugins.parameterType.FLOAT,
@@ -44,7 +163,13 @@ jsPsych.plugins["bRMS"] = (function () {
                 default: 1,
                 description: "Maximum contrast value for the Mondrian mask."
             },
-            timing_response: {
+            mondrian_min_opacity: {
+                type: jsPsych.plugins.parameterType.FLOAT,
+                pretty_name: 'Mondrian minimum contrast',
+                default: 0.2,
+                description: "Minimum contrast value for the Mondrian mask."
+            },
+            trial_duration: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Timing response',
                 default: 10,
@@ -53,45 +178,28 @@ jsPsych.plugins["bRMS"] = (function () {
             choices: {
                 type: jsPsych.plugins.parameterType.KEYCODE,
                 pretty_name: 'Response choices',
-                default: ['d', 'k']
+                default: ['q', 'p']
             },
-            stimulus_block: {
-                type: jsPsych.plugins.parameterType.KEYCODE,
-                pretty_name: 'Stimulus Block',
-                default: ""
-            },
-            stimulus_vertical_flip: {
+            waiting_time: {
                 type: jsPsych.plugins.parameterType.INT,
-                pretty_name: 'Vertical flip stimulus',
-                default: 0,
+                pretty_name: 'Waiting time',
+                default: 0.4,
+                description: "Time to wait before showing the stimulus in seconds"
             },
             stimulus_opacity: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Stimulus maximum opacity',
-                default: 0.5
+                default: 0.3
             },
             stimulus_side: {
                 type: jsPsych.plugins.parameterType.INT,
                 default: -1,
                 description: "Stimulus side: 1 is right, 0 is left. -1 is random"
             },
-            stimulus_delay: {
-                type: jsPsych.plugins.parameterType.FLOAT,
-                pretty_name: 'Within plugin ITI',
-                default: 0,
-                description: "Duration of ITI reserved for making sure stimulus image\
-                 is loaded."
-            },
             stimulus_duration: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: '',
                 default: 33,
-                description: ""
-            },
-            gap_duration: {
-                type: jsPsych.plugins.parameterType.FLOAT,
-                pretty_name: '',
-                default: 100,
                 description: ""
             },
             mask_duration: {
@@ -103,17 +211,17 @@ jsPsych.plugins["bRMS"] = (function () {
             stimulus_width: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 61,
-                description: 'stimulus width constant, multiply by visUnit'
+                description: 'stimulus width constant'
             },
             stimulus_height: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 61,
-                description: 'stimulus height constant, multiply by visUnit'
+                description: 'stimulus height constant'
             },
             fade_out_time: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Fade out time',
-                default: 0,
+                default: 1,
                 description: "When to start fading out mask. 0 is never."
             },
             fade_in_time: {
@@ -121,28 +229,6 @@ jsPsych.plugins["bRMS"] = (function () {
                 pretty_name: 'Fade in time',
                 default: 0,
                 description: "Duration of stimulus fade in."
-            },
-            bigProblemDuration: {
-                type: jsPsych.plugins.parameterType.INT,
-                default: 100,
-                description: 'If a frame is presented for more than x ms, regard the \
-                    trial as a big problem'
-            },
-            smallProblemStimDuration: {
-                type: jsPsych.plugins.parameterType.INT,
-                default: 40,
-                description: 'Stimulus presentation criterion for small problem'
-            },
-            smallProblemMondDuration: {
-                type: jsPsych.plugins.parameterType.INT,
-                default: 50,
-                description: 'Mondrian presentation criterion for small problem'
-            },
-            includeVBLinData: {
-                type: jsPsych.plugins.parameterType.BOOL,
-                default: false,
-                description: 'Whether to include vbl array in data: increases memory \
-                    requirements.'
             },
             fixation_visible: {
                 type: jsPsych.plugins.parameterType.BOOL,
@@ -152,301 +238,171 @@ jsPsych.plugins["bRMS"] = (function () {
             rectangle_width: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 6,
-                description: 'rWidth constant, multiply by visUnit'
+                description: 'rWidth constant'
             },
             rectangle_height: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 6,
-                description: 'rHeight constant, multiply by visUnit'
+                description: 'rHeight constant'
             },
             fixation_width: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: (25 / 3),
-                description: 'fixation length constant, multiply by visUnit'
+                description: 'fixation length constant'
             },
             fixation_height: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 2.34,
-                description: 'fixation height constant, multiply by visUnit'
+                description: 'fixation height constant'
             },
             frame_width: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 150,
-                description: 'frame width constant, multiply by visUnit'
+                description: 'frame width constant'
             },
             frame_height: {
                 type: jsPsych.plugins.parameterType.FLOAT,
                 default: 63,
-                description: 'frame height constant, multiply by visUnit'
-            },
-            block: {
-                type: jsPsych.plugins.parameterType.FLOAT,
-                default: 63,
-                description: 'Current trial block'
-            },
-            sub_block: {
-                type: jsPsych.plugins.parameterType.FLOAT,
-                default: 63,
-                description: 'Current trial sub block'
-            },
-            Hz: {
-                type: jsPsych.plugins.parameterType.FLOAT,
-                default: 60,
-                description: 'stimulus fps'
+                description: 'frame height constant'
             },
             background_color: {
                 type: jsPsych.plugins.parameterType.KEYCODE,
                 default: "darkgray",
                 description: 'Background color'
-            },
-            test_mode: {
-                type: jsPsych.plugins.parameterType.BOOL,
-                default: false,
-                description: 'If is Test bRMS'
-            },
-            correct_answer: {
-                type: jsPsych.plugins.parameterType.BOOL,
-                default: false,
-                description: 'If is Test bRMS'
             }
         }
     };
 
     jsPsych.pluginAPI.registerPreload('bRMS', 'stimulus', 'image');
 
-    /**
-     * JavaScript Client Detection
-     * (C) viazenetti GmbH (Christian Ludwig)
-     */
-    function update_client() {
-        let unknown = '-';
-
-        // screen
-        let screenResolution = '';
-
-        let width;
-        let height;
-        if (screen.width) {
-            width = window.screen.width * window.devicePixelRatio ?
-                window.screen.width * window.devicePixelRatio : '';
-            height = window.screen.height * window.devicePixelRatio ?
-                window.screen.height * window.devicePixelRatio : '';
-            screenResolution += '' + width + " x " + height;
-        }
-
-        // browser
-        let nVer = navigator.appVersion;
-        let nAgt = navigator.userAgent;
-        let browser = navigator.appName;
-        let version = '' + parseFloat(navigator.appVersion);
-        let majorVersion;
-        let nameOffset, verOffset, ix;
-
-        // Opera
-        if ((verOffset = nAgt.indexOf('Opera')) !== -1) {
-            browser = 'Opera';
-            version = nAgt.substring(verOffset + 6);
-            if ((verOffset = nAgt.indexOf('Version')) !== -1) {
-                version = nAgt.substring(verOffset + 8);
-            }
-        }
-        // Opera Next
-        if ((verOffset = nAgt.indexOf('OPR')) !== -1) {
-            browser = 'Opera';
-            version = nAgt.substring(verOffset + 4);
-        }
-        // Edge
-        else if ((verOffset = nAgt.indexOf('Edge')) !== -1) {
-            browser = 'Microsoft Edge';
-            version = nAgt.substring(verOffset + 5);
-        }
-        // MSIE
-        else if ((verOffset = nAgt.indexOf('MSIE')) !== -1) {
-            browser = 'Microsoft Internet Explorer';
-            version = nAgt.substring(verOffset + 5);
-        }
-        // Chrome
-        else if ((verOffset = nAgt.indexOf('Chrome')) !== -1) {
-            browser = 'Chrome';
-            version = nAgt.substring(verOffset + 7);
-        }
-        // Safari
-        else if ((verOffset = nAgt.indexOf('Safari')) !== -1) {
-            browser = 'Safari';
-            version = nAgt.substring(verOffset + 7);
-            if ((verOffset = nAgt.indexOf('Version')) !== -1) {
-                version = nAgt.substring(verOffset + 8);
-            }
-        }
-        // Firefox
-        else if ((verOffset = nAgt.indexOf('Firefox')) !== -1) {
-            browser = 'Firefox';
-            version = nAgt.substring(verOffset + 8);
-        }
-        // MSIE 11+
-        else if (nAgt.indexOf('Trident/') !== -1) {
-            browser = 'Microsoft Internet Explorer';
-            version = nAgt.substring(nAgt.indexOf('rv:') + 3);
-        }
-        // Other browsers
-        else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) < (verOffset = nAgt.lastIndexOf('/'))) {
-            browser = nAgt.substring(nameOffset, verOffset);
-            version = nAgt.substring(verOffset + 1);
-            if (browser.toLowerCase() === browser.toUpperCase()) {
-                browser = navigator.appName;
-            }
-        }
-        // trim the version string
-        if ((ix = version.indexOf(';')) !== -1) version = version.substring(0, ix);
-        if ((ix = version.indexOf(' ')) !== -1) version = version.substring(0, ix);
-        if ((ix = version.indexOf(')')) !== -1) version = version.substring(0, ix);
-
-        majorVersion = parseInt('' + version, 10);
-        if (isNaN(majorVersion)) {
-            version = '' + parseFloat(navigator.appVersion);
-            majorVersion = parseInt(navigator.appVersion, 10);
-        }
-
-        // mobile version
-        let mobile = /Mobile|mini|Fennec|Android|iP(ad|od|hone)/.test(nVer);
-
-        // cookie
-        let cookieEnabled = (navigator.cookieEnabled);
-
-        if (typeof navigator.cookieEnabled == 'undefined' && !cookieEnabled) {
-            document.cookie = 'testcookie';
-            cookieEnabled = (document.cookie.indexOf('testcookie') !== -1);
-        }
-        // system
-        let os = unknown;
-        let clientStrings = [
-            {s: 'Windows 10', r: /(Windows 10.0|Windows NT 10.0)/},
-            {s: 'Windows 8.1', r: /(Windows 8.1|Windows NT 6.3)/},
-            {s: 'Windows 8', r: /(Windows 8|Windows NT 6.2)/},
-            {s: 'Windows 7', r: /(Windows 7|Windows NT 6.1)/},
-            {s: 'Windows Vista', r: /Windows NT 6.0/},
-            {s: 'Windows Server 2003', r: /Windows NT 5.2/},
-            {s: 'Windows XP', r: /(Windows NT 5.1|Windows XP)/},
-            {s: 'Windows 2000', r: /(Windows NT 5.0|Windows 2000)/},
-            {s: 'Windows ME', r: /(Win 9x 4.90|Windows ME)/},
-            {s: 'Windows 98', r: /(Windows 98|Win98)/},
-            {s: 'Windows 95', r: /(Windows 95|Win95|Windows_95)/},
-            {s: 'Windows NT 4.0', r: /(Windows NT 4.0|WinNT4.0|WinNT|Windows NT)/},
-            {s: 'Windows CE', r: /Windows CE/},
-            {s: 'Windows 3.11', r: /Win16/},
-            {s: 'Android', r: /Android/},
-            {s: 'Open BSD', r: /OpenBSD/},
-            {s: 'Sun OS', r: /SunOS/},
-            {s: 'Chrome OS', r: /CrOS/},
-            {s: 'Linux', r: /(Linux|X11(?!.*CrOS))/},
-            {s: 'iOS', r: /(iPhone|iPad|iPod)/},
-            {s: 'Mac OS X', r: /Mac OS X/},
-            {s: 'Mac OS', r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/},
-            {s: 'QNX', r: /QNX/},
-            {s: 'UNIX', r: /UNIX/},
-            {s: 'BeOS', r: /BeOS/},
-            {s: 'OS/2', r: /OS\/2/},
-            {s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/}
-        ];
-        for (const id in clientStrings) {
-            let cs = clientStrings[id];
-            if (cs.r.test(nAgt)) {
-                os = cs.s;
-                break;
-            }
-        }
-
-        let osVersion = unknown;
-
-        if (/Windows/.test(os)) {
-            osVersion = /Windows (.*)/.exec(os)[1];
-            os = 'Windows';
-        }
-
-        switch (os) {
-            case 'Mac OS X':
-                osVersion = /Mac OS X (10[\.\_\d]+)/.exec(nAgt)[1];
-                break;
-
-            case 'Android':
-                osVersion = /Android ([\.\_\d]+)/.exec(nAgt)[1];
-                break;
-
-            case 'iOS':
-                osVersion = /OS (\d+)_(\d+)_?(\d+)?/.exec(nVer);
-                osVersion = osVersion[1] + '.' + osVersion[2] + '.' + (osVersion[3] | 0);
-                break;
-        }
-
-        // flash (you'll need to include swfobject)
-        /* script src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js" */
-        var flashVersion = 'no check';
-        if (typeof swfobject != 'undefined') {
-            var fv = swfobject.getFlashPlayerVersion();
-            if (fv.major > 0) {
-                flashVersion = fv.major + '.' + fv.minor + ' r' + fv.release;
-            } else {
-                flashVersion = unknown;
-            }
-        }
-
-
-        window.jscd = {
-            screenResolution: screenResolution,
-            browser: browser,
-            browserVersion: version,
-            browserMajorVersion: majorVersion,
-            mobile: mobile,
-            os: os,
-            osVersion: osVersion,
-            cookies: cookieEnabled,
-            flashVersion: flashVersion
-        };
-    }
-
     plugin.trial = function (display_element, trial) {
         // Clear previous
         display_element.innerHTML = '';
+        display_element.style.direction = '';
         setTimeout(function () {
-            // Start timing for within trial ITI
-            let startCompute = Date.now();
-
-            // Hide mouse
-
-            document.body.style.cursor = "none";
-            const div_length = document.getElementById("dpiDiv").clientHeight;
-            const rectangleWidth = trial.rectangle_width * div_length;
-            const rectangleHeight = trial.rectangle_height * div_length;
-            const fixationWidth = trial.fixation_width * div_length;
-            const fixationHeight = trial.fixation_height * div_length;
-            const frameWidth = trial.frame_width * div_length;
-            const frameHeight = trial.frame_height * div_length;
-            const stimulusWidth = trial.stimulus_width * div_length;
-            const stimulusHeight = trial.stimulus_height * div_length;
+            // Get cm in px
+            const div_length = Number(document.getElementById("dpiDiv").clientHeight);
+            const rectangle_width = Number(trial.rectangle_width * div_length);
+            const rectangle_height = Number(trial.rectangle_height * div_length);
+            const fixation_width = Number(trial.fixation_width * div_length);
+            const fixation_height = Number(trial.fixation_height * div_length);
+            const frame_width = Number(trial.frame_width * div_length);
+            const frame_height = Number(trial.frame_height * div_length);
+            const stimulus_width = Number(trial.stimulus_width * div_length);
+            const stimulus_height = Number(trial.stimulus_height * div_length);
+            const mask_duration = Number(trial.mask_duration);
+            const stimulus_duration = Number(trial.stimulus_duration);
+            const stimulus_max_opacity = Number(trial.stimulus_opacity);
+            const mondrian_max_opacity = Number(trial.mondrian_max_opacity);
+            const mondrian_min_opacity = Number(trial.mondrian_min_opacity);
 
             let orientation = 'h';
-            if (frameHeight > frameWidth) {
+            if (frame_height > frame_width) {
                 orientation = 'v';
             }
 
             const stimulus_side = GetStimulusSide(trial.stimulus_side, orientation);
 
-            // this array holds handlers from setTimeout calls
-            // that need to be cleared if the trial ends early
+            const frame_canvas = GetNewCanvas('frame_canvas', 'frame_canvas', frame_width, frame_height, "block", "visible");
+            frame_canvas.style.border = "20px double #000000";
+            frame_canvas.style.backgroundColor = trial.background_color;
+            display_element.append(frame_canvas);
+
+            const frame_context = frame_canvas.getContext("2d");
+            const fixation = new Fixation(fixation_width, fixation_height, 'black');
+            const stimulus = new Stimulus(stimulus_width, stimulus_height, trial.stimulus, stimulus_side);
+            const mondrians = []
+
+            for (let i = 0; i < trial.mondrians_count; i++) {
+                mondrians.push(new Mondrian(rectangle_width, rectangle_height,
+                    trial.rectangle_count, trial.colors,
+                    frame_width, frame_height));
+            }
+
+            mondrians_random_numbers = [];
+            mondrians_index = 0;
+            for (let i = 0; i < trial.trial_duration * 500; i++) {
+                mondrians_random_numbers.push(Math.floor(Math.random() * mondrians.length));
+            }
+
+            function get_random_mondrian() {
+                mondrians_index = (mondrians_index + 1) % mondrians_random_numbers.length;
+                return mondrians[mondrians_random_numbers[mondrians_index]];
+            }
+
+            // Hide mouse
+            document.body.style.cursor = "none";
+
             let setTimeoutHandlers = [];
-            update_client();
+
             // store response
             let response = {
                 rt: -1,
                 key: -1
             };
 
+            let trial_data = {}
+
+            function is_correct(answer) {
+                if ((trial.right_up.includes(answer.toLowerCase()) || trial.right_up.includes(answer.toUpperCase())) &&
+                    (stimulus_side == '0' || stimulus_side == '2')) {
+                    return true;
+                } else if ((trial.left_down.includes(answer.toLowerCase()) || trial.left_down.includes(answer.toUpperCase())) &&
+                    (stimulus_side == '1' || stimulus_side == '3')) {
+                    return true
+                } else {
+                    return false;
+                }
+            }
+            
+            let start_time = 0;
+            let masked = false;
+            let current_time = 0;
+            let start_mask_time = 0;
+            let start_stimulus_time = new Date().getTime();
+            let stimulus_opacity = 0;
+            let mondrian_opacity = 0;
+            const start_fade_out = (Number(trial.trial_duration) - Number(trial.fade_out_time)) * 1000;
+            const end_fade_in = Number(trial.fade_in_time) * 1000;
+
+            function run_animation_loop() {
+                // Calculate time elapsed since the last animation frame
+                current_time = new Date().getTime();
+
+                // Check if it's time to switch between stimulus and mask
+                if (masked && ((current_time - start_mask_time) >= mask_duration)) {
+                    if (current_time - start_stimulus_time >= end_fade_in) {
+                        stimulus_opacity = stimulus_max_opacity;
+                    } else {
+                        stimulus_opacity = stimulus_max_opacity * ((current_time - start_stimulus_time) / end_fade_in);
+                    }
+                    stimulus.draw(frame_context, frame_canvas, stimulus_opacity);
+                    fixation.draw(frame_context, frame_canvas);
+                    start_stimulus_time = current_time;
+                    masked = false;
+                } else if (!masked && ((current_time - start_stimulus_time) >= stimulus_duration)) {
+                    if (current_time - start_time >= start_fade_out) {
+                        const fade_progress = ((current_time - start_time) - start_fade_out) / Number(trial.fade_out_time);
+                        mondrian_opacity = (mondrian_max_opacity * (1 - fade_progress)) + (mondrian_min_opacity * fade_progress);
+                        mondrian_opacity = Math.max(mondrian_opacity, mondrian_min_opacity);
+                    } else {
+                        mondrian_opacity = mondrian_max_opacity;
+                    }
+                    get_random_mondrian().draw(frame_context, mondrian_opacity);
+                    fixation.draw(frame_context, frame_canvas);
+                    start_mask_time = current_time;
+                    masked = true;
+                }
+
+                animation = window.requestAnimationFrame(run_animation_loop);
+            }
+
             const end_trial = function () {
-                // timelineMax.remove();
-                // // kill the animation
-                // timelineMax.kill();
+                window.cancelAnimationFrame(animation);
+                frame_context.clearRect(0, 0, frame_canvas.width, frame_canvas.height);
 
                 let i;
+
                 // kill any remaining setTimeout handlers
                 for (i = 0; i < setTimeoutHandlers.length; i++) {
                     clearTimeout(setTimeoutHandlers[i]);
@@ -462,35 +418,19 @@ jsPsych.plugins["bRMS"] = (function () {
                     (window.innerWidth === screen.width && window.innerHeight === screen.height)) {
                     fullscreen = true;
                 }
-                let keyPress = String.fromCharCode(response.key);
-                if (!/^[a-zA-Z]+$/.test(keyPress)) {
-                    keyPress = "-1"
-                }
-                // gather the data to store for the trial
-                let trial_data = {
-                    "rt": response.rt,
-                    "stimulus": trial.file,
-                    "stimulus_block": trial.stimulus_block,
-                    "stimulus_side": stimulus_side,
-                    "key_press": keyPress,
-                    "time_post_trial": trial.post_trial_gap,
-                    "subject": trial.count + 1,
-                    "is_fullscreen": fullscreen,
-                    "trial_began": trial_began,
-                    'os': window.jscd.os + ' ' + window.jscd.osVersion,
-                    'browser': jscd.browser + ' ' + window.jscd.browserMajorVersion +
-                        ' (' + window.jscd.browserVersion + ')',
-                    'mobile': window.jscd.mobile,
-                    'flash': window.jscd.flashVersion,
-                    'cookies': window.jscd.cookies,
-                    'screen_size': window.jscd.screen,
-                    'block': trial.block,
-                    'sub_block': trial.sub_block
-                };
 
-                if (trial.includeVBLinData) {
-                    trial_data.vbl = vbl;
-                }
+                let key_press = String.fromCharCode(response.key);
+
+                // gather the data to store for the trial
+                trial_data = {
+                    "rt": response.rt,
+                    "stimulus": trial.stimulus,
+                    "stimulus_side": stimulus_side,
+                    "key_press": key_press,
+                    "time_post_trial": trial.post_trial_gap,
+                    "is_fullscreen": fullscreen,
+                    "correct": is_correct(key_press)
+                };
 
                 // clear the display
                 display_element.innerHTML = '';
@@ -506,102 +446,16 @@ jsPsych.plugins["bRMS"] = (function () {
 
             // function to handle responses by the subject
             let after_response = function (info) {
-
+                console.log(info);
                 // only record the first response
                 if (response.key === -1) {
                     response = info;
                 }
                 end_trial();
             };
-            let isStare = trial.stimulus_duration === 0;
-            //Function for start experiment
+
             let start_trial = function () {
-                console.log("start_trial");
-                if (trial.fixation_visible) {
-                    fixation.style.visibility = "visible";
-                } else {
-                    fixation.style.visibility = "hidden";
-                }
-
-                const startTime = new Date().getTime() / 1000;
-                const start_fade_out = trial.timing_response - trial.fade_out_time;
-                const fade_out_time = trial.fade_out_time * 1000;
-                stimulus.style.opacity = 0;
-                let hidden = false;
-                let changeMask = false;
-                if (trial.stimulus_duration !== 0) {
-                    isStare = false;
-                }
-
-                function resetMondrian() {
-                    for (let i = 0; i < mondrian_list.length; i++) {
-                        mondrian_list[i].style.opacity = 0;
-                    }
-                }
-
-                stimulus.style.visibility = "visible";
-
-                function stare(index = 0) {
-                    changeMask = !changeMask;
-                    let current_time = ((new Date().getTime() / 1000) - startTime);
-                    if (changeMask) {
-                        resetMondrian();
-                        if (current_time > start_fade_out) {
-                            mondrian_list[index].style.opacity = trial.mondrian_max_opacity -
-                                ((current_time - start_fade_out) / fade_out_time * 1000) * trial.mondrian_max_opacity;
-                        } else {
-                            mondrian_list[index].style.opacity = trial.mondrian_max_opacity;
-                        }
-                    } else {
-                        if (current_time < trial.fade_in_time) {
-                            stimulus.style.opacity =
-                                (current_time / (trial.fade_in_time)) * trial.stimulus_opacity;
-                        } else {
-                            stimulus.style.opacity = trial.stimulus_opacity;
-                        }
-                    }
-                    if (current_time < 10) {
-                        setTimeout(function () {
-                            stare(((index + 1) % mondrian_list.length))
-                        }, changeMask ? trial.mask_duration : trial.stimulus_duration);
-                    }
-                }
-
-                function blink(index = 0) {
-                    stimulus.style.visibility = hidden ? "visible" : "hidden";
-                    hidden = !hidden;
-                    let stimulusOpacity, mondrianOpacity;
-                    let current_time = ((new Date().getTime() / 1000) - startTime);
-
-                    if (hidden) {
-                        mondrianOpacity = trial.mondrian_max_opacity;
-                        if (current_time > start_fade_out) {
-                            mondrianOpacity = trial.mondrian_max_opacity -
-                                ((current_time - start_fade_out) / fade_out_time * 1000) * trial.mondrian_max_opacity;
-                        }
-                        mondrian_list[index].style.opacity = mondrianOpacity;
-                    } else {
-                        stimulusOpacity = trial.stimulus_opacity;
-                        resetMondrian();
-                        if (current_time < trial.fade_in_time) {
-                            stimulusOpacity = (current_time / (trial.fade_in_time)) * trial.stimulus_opacity;
-                        }
-                        stimulus.style.opacity = stimulusOpacity;
-                    }
-                    if (current_time < 10) {
-                        setTimeout(function () {
-                            blink(((index + 1) % mondrian_list.length))
-                        }, hidden ? trial.mask_duration : trial.stimulus_duration);
-                    }
-                }
-
-                if (isStare) {
-                    stare();
-                } else {
-                    blink();
-                }
-
-                // start the response listener
+                // Start the response listener
                 if (JSON.stringify(trial.choices) !== JSON.stringify(["none"])) {
                     let keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
                         callback_function: after_response,
@@ -611,100 +465,24 @@ jsPsych.plugins["bRMS"] = (function () {
                         allow_held_key: false
                     });
                 }
-            };
 
-            // Make display and animation
-            // end trial if time limit is set
-            if (trial.timing_response > 0) {
-                const t2 = setTimeout(function () {
+                setTimeout(function () {
+                    start_time = new Date().getTime();
+                    run_animation_loop();
+                }, trial.waiting_time * 1000);
+
+
+                setTimeout(function () {
+                    window.cancelAnimationFrame(animation);
+                    frame_context.clearRect(0, 0, frame_canvas.width, frame_canvas.height);
                     end_trial();
-                }, trial.timing_response * 1000);
-                setTimeoutHandlers.push(t2);
-            }
-
-            // Add Fixation Canvas to display elements
-            let fixation = CreateNewCanvas('fixation', 'jspsych-brms-frame',
-                frameWidth, frameHeight, 3, "absolute",
-                "0px double #000000", "hidden", 1);
-
-            display_element.append(fixation);
-
-            //Draw fixation on Fixation Canvas
-            CreateFixationContext("2d", 'black', frameWidth,
-                fixationWidth, frameHeight, fixationHeight, fixation);
-
-            let stimulus_layer, mask_layer;
-            if (isStare) {
-                mask_layer = 1;
-                stimulus_layer = 2;
-            } else {
-                mask_layer = 2;
-                stimulus_layer = 1;
-            }
-
-            // Make mondrian list
-            let mondrian = [];
-            let mondrian_list = [];
-            for (let i = 0; i < trial.mondrianNum; i++) {
-                mondrian = CreateMondrian("mondrian" + i, 'jspsych-brms-frame',
-                    frameWidth, frameHeight, mask_layer, "absolute",
-                    "0px double #000000", 0);
-                mondrian_list.push(mondrian);
-                display_element.append(mondrian_list[i]);
-
-                let ctx = CreateMondrianContext("2d", mondrian, trial.background_color,
-                    0, 0, frameWidth, frameHeight);
-
-                // Fill rect
-                FillRectangles(trial.rectNum, ctx, trial.colorOpts,
-                    rectangleWidth, rectangleHeight, frameWidth, frameHeight);
-            }
-
-            // Add Stimulus Canvas to display elements
-            const stimulus = CreateNewCanvas('stimulus', 'jspsych-brms-frame',
-                frameWidth, frameHeight, stimulus_layer, "absolute",
-                "0px #000000", "visible", 0);
-            display_element.append(stimulus);
-
-            //Add border
-            display_element.append(CreateNewCanvas('border', 'jspsych-brms-frame',
-                frameWidth, frameHeight, 0, "absolute",
-                "20px double #000000", "visible", 1));
-
-            // Animation
-            let trialLength = trial.timing_response;
-            let maxFlips = trialLength * trial.Hz;
-            let fade_out_flip = trial.fade_out_time * trial.Hz;
-            let regularFlip = (trialLength - trial.fade_out_time) * trial.Hz;
-
-            // Create a timeline
-            let vbl = {
-                time: [],
-                mondrian_alpha: [],
-                mondrian_number: []
+                }, (trial.trial_duration + trial.waiting_time) * 1000);
             };
-            let trial_began = 0;
-        
-            /// Create mondrian's alpha profile
-            let mondrian_profiles = CreateMondrianProfiles(maxFlips, fade_out_flip,
-                regularFlip, trial.mondrian_max_opacity,
-                trial.Hz, trial.fade_out_time, trial.mondrianNum,
-                trial.stimulus_duration, trial.mask_duration);
 
-            // Make into eases and add to timeline
-            for (let i = 0; i < mondrian_profiles.length; i++) {
-                if (mondrian_profiles[i][mondrian_profiles[i].length - 2] > 1) {
-                    mondrian_profiles[i].splice(mondrian_profiles[i].length - 2, 2); //remove the last 2 points
-                } else if (mondrian_profiles[i][mondrian_profiles[i].length - 2] < 1) {
-                    mondrian_profiles[i].push(1, 0);
-                }
-            }
+            start_trial();
 
-            //Draw stimulus on Stimulus Canvas
-            CreateStimulusContext("2d", stimulus, trial.stimulus_vertical_flip,
-                frameWidth, frameHeight, stimulusWidth, stimulusHeight, stimulus_side,
-                trial.stimulus, start_trial(), trial.stimulus_delay, startCompute, fixationWidth);
         }, 10);
     };
+
     return plugin;
 })();

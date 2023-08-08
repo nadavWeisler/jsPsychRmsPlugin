@@ -1,5 +1,5 @@
 //Create New Canvas
-function CreateNewCanvas(_id, _className, _width, _height, _zIndex, _position,
+function get_new_canvas(_id, _className, _width, _height, _zIndex, _position,
                          _border, _visibility, _opacity) {
     let newCanvas = document.createElement('canvas');
     newCanvas.id = _id;
@@ -168,7 +168,7 @@ function CreateStimulusContext(_id, stimulus, stimulus_vertical_flip, frameWidth
     };
 }
 
-function getRandomInt(min, max) {
+function get_random_int(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min)) + min;
@@ -176,7 +176,7 @@ function getRandomInt(min, max) {
 }
 
 //Get Stimulus side
-function GetStimulusSide(trial_stimulus_side, orientation = 'h') {
+function get_stimulus_side(trial_stimulus_side, orientation = 'h') {
     if (trial_stimulus_side >= 0) {
         return trial_stimulus_side
     } else {
@@ -188,7 +188,7 @@ function GetStimulusSide(trial_stimulus_side, orientation = 'h') {
                 min_int = 2;
             }
         }
-        return getRandomInt(min_int, max_int);
+        return get_random_int(min_int, max_int);
     }
 }
 
