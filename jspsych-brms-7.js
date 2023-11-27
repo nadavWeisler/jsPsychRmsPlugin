@@ -131,155 +131,157 @@ function GetNewCanvas(id, class_name, canvas_width, canvas_height, canvas_positi
     return newCanvas;
 }
 
-jsPsych.plugins["rms"] = (function () {
-    let plugin = {};
+const jsPsychRms = (function (jspsych) {
+    'use strict';
 
-    plugin.info = {
+    const info = {
         name: 'RMS',
         description: 'Repeated Mask Suppression (RMS) task',
         parameters: {
             colors: {
-                type: jsPsych.plugins.parameterType.COMPLEX,
+                type: jspsych.plugins.parameterType.COMPLEX,
                 pretty_name: 'Color palette',
                 default: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'
                 ],
                 description: "Colors for the Mondrian"
             },
             rectangle_count: {
-                type: jsPsych.plugins.parameterType.INT,
+                type: jspsych.plugins.parameterType.INT,
                 pretty_name: 'Rectangle number',
                 default: 500,
                 description: "Number of rectangles in Mondrian"
             },
             mondrians_count: {
-                type: jsPsych.plugins.parameterType.INT,
+                type: jspsych.plugins.parameterType.INT,
                 pretty_name: 'Mondrian number',
                 default: 50,
                 description: "Number of Mondrians"
             },
             mondrian_max_opacity: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Mondrian maximum contrast',
                 default: 1,
                 description: "Maximum contrast value for the Mondrian mask."
             },
             mondrian_min_opacity: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Mondrian minimum contrast',
                 default: 0.2,
                 description: "Minimum contrast value for the Mondrian mask."
             },
             trial_duration: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Timing response',
                 default: 10,
                 description: "Maximum time duration allowed for response"
             },
             choices: {
-                type: jsPsych.plugins.parameterType.KEYCODE,
+                type: jspsych.plugins.parameterType.KEYCODE,
                 pretty_name: 'Response choices',
                 default: ['q', 'p']
             },
             waiting_time: {
-                type: jsPsych.plugins.parameterType.INT,
+                type: jspsych.plugins.parameterType.INT,
                 pretty_name: 'Waiting time',
-                default: 0,
+                default: 0.4,
                 description: "Time to wait before showing the stimulus in seconds"
             },
             stimulus_opacity: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Stimulus maximum opacity',
                 default: 0.3
             },
             stimulus_side: {
-                type: jsPsych.plugins.parameterType.INT,
+                type: jspsych.plugins.parameterType.INT,
                 default: -1,
                 description: "Stimulus side: 1 is right, 0 is left. -1 is random"
             },
             stimulus_duration: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: '',
                 default: 33,
                 description: ""
             },
             mask_duration: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: '',
                 default: 67,
                 description: ""
             },
             stimulus_width: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 61,
                 description: 'stimulus width constant'
             },
             stimulus_height: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 61,
                 description: 'stimulus height constant'
             },
             fade_out_time: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Fade out time',
                 default: 1,
                 description: "When to start fading out mask. 0 is never."
             },
             fade_in_time: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 pretty_name: 'Fade in time',
                 default: 0,
                 description: "Duration of stimulus fade in."
             },
             fixation_visible: {
-                type: jsPsych.plugins.parameterType.BOOL,
+                type: jspsych.plugins.parameterType.BOOL,
                 default: true,
                 description: 'Boolean to show fixation'
             },
             rectangle_width: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 6,
                 description: 'rWidth constant'
             },
             rectangle_height: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 6,
                 description: 'rHeight constant'
             },
             fixation_width: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: (25 / 3),
                 description: 'fixation length constant'
             },
             fixation_height: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 2.34,
                 description: 'fixation height constant'
             },
             frame_width: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 150,
                 description: 'frame width constant'
             },
             frame_height: {
-                type: jsPsych.plugins.parameterType.FLOAT,
+                type: jspsych.plugins.parameterType.FLOAT,
                 default: 63,
                 description: 'frame height constant'
             },
             background_color: {
-                type: jsPsych.plugins.parameterType.KEYCODE,
+                type: jspsych.plugins.parameterType.KEYCODE,
                 default: "darkgray",
                 description: 'Background color'
             }
         }
     };
 
-    jsPsych.pluginAPI.registerPreload('bRMS', 'stimulus', 'image');
+    class RepeatedMaskSuppressionPlugin {
+        constructor(jsPsych) {
+            this.jsPsych = jsPsych;
+        }
 
-    plugin.trial = function (display_element, trial) {
-        // Clear previous
-        display_element.innerHTML = '';
-        display_element.style.direction = '';
-        setTimeout(function () {
+        trial(display_element, trial) {
+            // Clear previous
+            display_element.innerHTML = '';
+            display_element.style.direction = '';
             // Get cm in px
             const div_length = Number(document.getElementById("dpiDiv").clientHeight);
             const rectangle_width = Number(trial.rectangle_width * div_length);
@@ -295,8 +297,6 @@ jsPsych.plugins["rms"] = (function () {
             const stimulus_max_opacity = Number(trial.stimulus_opacity);
             const mondrian_max_opacity = Number(trial.mondrian_max_opacity);
             const mondrian_min_opacity = Number(trial.mondrian_min_opacity);
-            const waiting_time = Number(trial.waiting_time);
-            const trial_duration = Number(trial.trial_duration);
 
             let orientation = 'h';
             if (frame_height > frame_width) {
@@ -323,7 +323,7 @@ jsPsych.plugins["rms"] = (function () {
 
             mondrians_random_numbers = [];
             mondrians_index = 0;
-            for (let i = 0; i < trial_duration * 500; i++) {
+            for (let i = 0; i < trial.trial_duration * 500; i++) {
                 mondrians_random_numbers.push(Math.floor(Math.random() * mondrians.length));
             }
 
@@ -346,15 +346,12 @@ jsPsych.plugins["rms"] = (function () {
             let trial_data = {}
 
             function is_correct(answer) {
-                if (!(this.right_up && this.left_down)) {
-                    return false;
-                }
                 if ((trial.right_up.includes(answer.toLowerCase()) || trial.right_up.includes(answer.toUpperCase())) &&
                     (stimulus_side == '0' || stimulus_side == '2')) {
                     return true;
                 } else if ((trial.left_down.includes(answer.toLowerCase()) || trial.left_down.includes(answer.toUpperCase())) &&
                     (stimulus_side == '1' || stimulus_side == '3')) {
-                    return true;
+                    return true
                 } else {
                     return false;
                 }
@@ -367,10 +364,10 @@ jsPsych.plugins["rms"] = (function () {
             let start_stimulus_time = new Date().getTime();
             let stimulus_opacity = 0;
             let mondrian_opacity = 0;
-            const start_fade_out = (trial_duration - Number(trial.fade_out_time)) * 1000;
+            const start_fade_out = (Number(trial.trial_duration) - Number(trial.fade_out_time)) * 1000;
             const end_fade_in = Number(trial.fade_in_time) * 1000;
 
-            function animation_loop() {
+            function run_animation_loop() {
                 // Calculate time elapsed since the last animation frame
                 current_time = new Date().getTime();
 
@@ -399,13 +396,7 @@ jsPsych.plugins["rms"] = (function () {
                     masked = true;
                 }
 
-                if ((current_time - start_time) >= ((trial_duration + waiting_time) * 1000)) {
-                    window.cancelAnimationFrame(animation);
-                    frame_context.clearRect(0, 0, frame_canvas.width, frame_canvas.height);
-                    end_trial();
-                } else {
-                    animation = window.requestAnimationFrame(animation_loop);
-                }
+                animation = window.requestAnimationFrame(run_animation_loop);
             }
 
             const end_trial = function () {
@@ -421,7 +412,7 @@ jsPsych.plugins["rms"] = (function () {
 
                 // kill keyboard listeners
                 if (typeof keyboardListener !== 'undefined') {
-                    jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
+                    this.jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
                 }
 
                 let fullscreen = false;
@@ -451,7 +442,7 @@ jsPsych.plugins["rms"] = (function () {
 
                 // move on to the next trial
                 setTimeout(function () {
-                    jsPsych.finishTrial(trial_data);
+                    this.jsPsych.finishTrial(trial_data);
                 }, 10);
             };
 
@@ -468,7 +459,7 @@ jsPsych.plugins["rms"] = (function () {
             let start_trial = function () {
                 // Start the response listener
                 if (JSON.stringify(trial.choices) !== JSON.stringify(["none"])) {
-                    let keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+                    let keyboardListener = this.jsPsych.pluginAPI.getKeyboardResponse({
                         callback_function: after_response,
                         valid_responses: trial.choices,
                         rt_method: 'performance',
@@ -479,14 +470,22 @@ jsPsych.plugins["rms"] = (function () {
 
                 setTimeout(function () {
                     start_time = new Date().getTime();
-                    animation_loop();
+                    run_animation_loop();
                 }, trial.waiting_time * 1000);
+
+
+                setTimeout(function () {
+                    window.cancelAnimationFrame(animation);
+                    frame_context.clearRect(0, 0, frame_canvas.width, frame_canvas.height);
+                    end_trial();
+                }, (trial.trial_duration + trial.waiting_time) * 1000);
             };
 
             start_trial();
+        };
+    }
 
-        }, 10);
-    };
+    RepeatedMaskSuppressionPlugin.info = info;
 
-    return plugin;
-})();
+    return RepeatedMaskSuppressionPlugin;
+})(jsPsychModule);
