@@ -118,9 +118,3 @@ Each trial returns at least:
 - **`time_post_trial`** — Post-trial gap (if configured in jsPsych).
 
 ---
-
-### References
-
-Tsuchiya, N., & Koch, C. (2005). Continuous flash suppression reduces negative afterimages. Nature Neuroscience, 8(8), 1096–1101.
-
-Abir, Y., & Hassin, R. R. (2020). Getting to the heart of it: Multi-method exploration of nonconscious prioritization processes. Consciousness and Cognition, 85, 103005.
