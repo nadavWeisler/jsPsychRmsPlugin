@@ -9,6 +9,7 @@ In RMS, participants are presented with a stream of **Mondrian masks interleaved
 In **breaking RMS (bRMS)**, stimuli are presented long enough for the target to **break suppression and become consciously visible**. Participants indicate the **location of the target relative to screen center as soon as it becomes visible**. Their reaction times are taken as **breaking times (BTs)**—a measure of the time required for the stimulus to reach awareness. bRMS BTs have been shown to be a valid index of prioritization for consciousness and to show **convergent validity with bCFS BTs** (Abir & Hassin, 2020).
 
 <img width="384" height="311" alt="image" src="https://github.com/user-attachments/assets/ed459519-30b2-4a80-a000-704e8cb55f51" />
+
 ---
 
 ## Features
