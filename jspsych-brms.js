@@ -523,3 +523,15 @@ jsPsych.plugins["rms"] = (function () {
 
     return plugin;
 })();
+
+// CommonJS exports for Node.js testing environments
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        Fixation,
+        Stimulus,
+        Mondrian,
+        GetStimulusSide,
+        GetStimulusLocation,
+        GetNewCanvas,
+    };
+}
