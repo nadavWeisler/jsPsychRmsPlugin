@@ -1,6 +1,6 @@
 # jsPsychRmsPlugin
 
-A **jsPsych 6** plugin for implementing **Repeated Masking Suppression (RMS)** and **breaking RMS (bRMS)** paradigms in web-based experiments.
+A jsPsych plugin for implementing **Repeated Masking Suppression (RMS)** and **breaking RMS (bRMS)** paradigms in web-based experiments. This repository ships two entry points for the same task: `jspsych-brms.js` (jsPsych 6) and `jspsych-brms-7.js` (jsPsych 7).
 
 RMS is a technique for presenting stimuli **below the threshold of consciousness for extended durations**. It is closely related to **Continuous Flash Suppression (CFS; Tsuchiya & Koch, 2005)**, but relies on different visual principles and **requires no special apparatus beyond a standard computer and monitor**. RMS is based on **forward- and backward-masking**, separating the target and mask in time.
 
@@ -14,7 +14,7 @@ In **breaking RMS (bRMS)**, stimuli are presented long enough for the target to 
 
 ## Features
 
-- RMS / bRMS implementation for jsPsych 6
+- RMS / bRMS implementation for jsPsych 6 and jsPsych 7
 - Alternating **mask–stimulus** presentation with configurable durations
 - **Mondrian mask** generator (rectangle size, count, color palette)
 - Control over **stimulus contrast** and **mask contrast** (including fade-in/fade-out)
@@ -26,14 +26,39 @@ In **breaking RMS (bRMS)**, stimuli are presented long enough for the target to 
 
 ## Installation
 
-Include the plugin after jsPsych 6 in your HTML:
+Load the plugin with a script tag after jsPsych. This snapshot is not published to npm. `package.json` is here so the Jest tests can run.
+
+### jsPsych 6
+
+Use the jsPsych 6 build in this repository (`jspsych.js`), then the v6 plugin. `index.html` is a minimal example of that order.
 
 ```html
 <script src="jspsych.js"></script>
 <script src="jspsych-brms.js"></script>
+<link rel="stylesheet" href="css/jspsych.css" type="text/css">
 ```
 
-Basic Usage
+That `jspsych.js` creates a hidden `dpiDiv` element (1 mm tall). The plugin reads its `clientHeight` as pixels per millimeter and scales stimulus, mask, and frame sizes from millimeters to pixels.
+
+### jsPsych 7
+
+Load a jsPsych 7 build first, so the `jsPsychModule` global exists, then `jspsych-brms-7.js`. That file defines the global constructor `jsPsychRms`.
+
+```html
+<script src="jspsych.js"></script>
+<script src="jspsych-brms-7.js"></script>
+```
+
+Point `jspsych.js` at your jsPsych 7 build. The copy in this repository is jsPsych 6 and does not define `jsPsychModule`.
+
+On a jsPsych 7 page, add a hidden element with id `dpiDiv` before the trial runs (for example `<div id="dpiDiv" style="height:1mm;width:1mm;visibility:hidden"></div>`). The plugin uses `document.getElementById('dpiDiv').clientHeight` as pixels per millimeter.
+
+## Basic usage
+
+Trial parameters are the same in both versions.
+
+### jsPsych 6
+
 ```javascript
 var rms_trial = {
   type: 'rms',
@@ -49,8 +74,36 @@ var rms_trial = {
   correct_responses: ['p']    // optional correctness rule
 };
 
+var timeline = [];
 timeline.push(rms_trial);
+
+jsPsych.init({
+  timeline: timeline
+});
 ```
+
+### jsPsych 7
+
+```javascript
+var jsPsych = initJsPsych();
+
+var timeline = [{
+  type: jsPsychRms,
+  stimulus: 'img/target.png',
+  stimulus_side: -1,
+  stimulus_opacity: 0.4,
+  mondrian_max_opacity: 1,
+  mondrian_min_opacity: 0.01,
+  mask_duration: 67,
+  stimulus_duration: 34,
+  trial_duration: 10,
+  choices: ['q', 'p'],
+  correct_responses: ['p']
+}];
+
+jsPsych.run(timeline);
+```
+
 ## Key Parameters (Selection)
 
 These parameters are defined in `plugin.info.parameters` in the source code.
@@ -118,4 +171,22 @@ Each trial returns at least:
 - **`is_fullscreen`** — Whether display was in fullscreen mode.
 - **`time_post_trial`** — Post-trial gap (if configured in jsPsych).
 
+`jspsych-brms.js` writes every field above. `jspsych-brms-7.js` writes the same fields except `time_post_trial`. If no key is pressed, the jsPsych 7 plugin records `rt` and `correct` as `null` and `key_press` as an empty string.
+
 ---
+
+## Citation
+
+Cite this software with the metadata in [`CITATION.cff`](CITATION.cff).
+
+That file has **no DOI yet**. After Zenodo archives a GitHub release of this repository, add the assigned DOI to the `doi` field in `CITATION.cff`.
+
+## License
+
+GNU General Public License v3.0. The full text is in [`LICENSE`](LICENSE).
+
+## Author
+
+Nadav Weisler — [ORCID 0009-0001-2729-5422](https://orcid.org/0009-0001-2729-5422)
+
+Affiliations: Shalvata Mental Health Center; Data Research Center for Mental Health and Rehabilitation, Clalit; Psychology Department, Hebrew University of Jerusalem.

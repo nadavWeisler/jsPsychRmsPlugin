@@ -1,0 +1,21 @@
+{
+  "title": "jsPsychRmsPlugin",
+  "description": "A jsPsych plugin for Repeated Masking Suppression (RMS) and breaking RMS (bRMS) paradigms in web-based experiments. Includes plugins for jsPsych 6 (jspsych-brms.js) and jsPsych 7 (jspsych-brms-7.js).",
+  "upload_type": "software",
+  "license": "gpl-3.0",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Weisler, Nadav",
+      "orcid": "0009-0001-2729-5422",
+      "affiliation": "Shalvata Mental Health Center; Data Research Center for Mental Health and Rehabilitation, Clalit; Psychology Department, Hebrew University of Jerusalem"
+    }
+  ],
+  "keywords": [
+    "jsPsych",
+    "Repeated Masking Suppression",
+    "breaking RMS",
+    "consciousness",
+    "psychology"
+  ]
+}

@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+  This file intentionally has no DOI yet. After Zenodo archives a GitHub
+  release of this repository, add the assigned DOI to the doi field.
+type: software
+title: jsPsychRmsPlugin
+abstract: >-
+  A jsPsych plugin for Repeated Masking Suppression (RMS) and breaking RMS
+  (bRMS) paradigms in web-based experiments. Includes plugins for jsPsych 6
+  and jsPsych 7.
+authors:
+  - family-names: Weisler
+    given-names: Nadav
+    orcid: "https://orcid.org/0009-0001-2729-5422"
+    affiliation: >-
+      Shalvata Mental Health Center; Data Research Center for Mental Health
+      and Rehabilitation, Clalit; Psychology Department, Hebrew University
+      of Jerusalem
+version: 0.1.0
+date-released: "2026-09-27"
+license: GPL-3.0
+repository-code: "https://github.com/nadavWeisler/jsPsychRmsPlugin"
+keywords:
+  - jsPsych
+  - Repeated Masking Suppression
+  - breaking RMS
+  - consciousness
+  - psychology

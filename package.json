@@ -1,7 +1,7 @@
 {
   "name": "jspsychrmsplugin",
-  "version": "1.0.0",
-  "description": "A jsPsych 7 plugin for implementing Repeated Masking Suppression (RMS) and breaking RMS (bRMS) paradigms in web-based experiments.",
+  "version": "0.1.0",
+  "description": "A jsPsych 6 and 7 plugin for implementing Repeated Masking Suppression (RMS) and breaking RMS (bRMS) paradigms in web-based experiments.",
   "main": "jspsych-brms-7.js",
   "scripts": {
     "test": "jest"
@@ -13,9 +13,15 @@
     "type": "git",
     "url": "git+https://github.com/nadavWeisler/jsPsychRmsPlugin.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "jspsych",
+    "rms",
+    "brms",
+    "psychology",
+    "consciousness"
+  ],
+  "author": "Nadav Weisler (https://orcid.org/0009-0001-2729-5422)",
+  "license": "GPL-3.0",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/nadavWeisler/jsPsychRmsPlugin/issues"
