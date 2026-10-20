@@ -1,5 +1,7 @@
 # jsPsychRmsPlugin
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22990081.svg)](https://doi.org/10.5281/zenodo.22990081)
+
 A jsPsych plugin for implementing **Repeated Masking Suppression (RMS)** and **breaking RMS (bRMS)** paradigms in web-based experiments. This repository ships two entry points for the same task: `jspsych-brms.js` (jsPsych 6) and `jspsych-brms-7.js` (jsPsych 7).
 
 RMS is a technique for presenting stimuli **below the threshold of consciousness for extended durations**. It is closely related to **Continuous Flash Suppression (CFS; Tsuchiya & Koch, 2005)**, but relies on different visual principles and **requires no special apparatus beyond a standard computer and monitor**. RMS is based on **forward- and backward-masking**, separating the target and mask in time.
@@ -177,9 +179,7 @@ Each trial returns at least:
 
 ## Citation
 
-Cite this software with the metadata in [`CITATION.cff`](CITATION.cff).
-
-That file has **no DOI yet**. After Zenodo archives a GitHub release of this repository, add the assigned DOI to the `doi` field in `CITATION.cff`.
+Cite this software with the metadata in [`CITATION.cff`](CITATION.cff). The Zenodo concept DOI is [10.5281/zenodo.22990081](https://doi.org/10.5281/zenodo.22990081).
 
 ## License
 

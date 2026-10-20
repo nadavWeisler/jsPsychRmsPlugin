@@ -17,5 +17,12 @@
     "breaking RMS",
     "consciousness",
     "psychology"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/nadavWeisler/jsPsychRmsPlugin",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
   ]
 }
