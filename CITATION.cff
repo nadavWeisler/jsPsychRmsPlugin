@@ -1,10 +1,8 @@
 cff-version: 1.2.0
-message: >-
-  If you use this software, please cite it using the metadata from this file.
-  This file intentionally has no DOI yet. After Zenodo archives a GitHub
-  release of this repository, add the assigned DOI to the doi field.
+message: If you use this software, please cite it using the metadata from this file.
 type: software
 title: jsPsychRmsPlugin
+doi: 10.5281/zenodo.22990081
 abstract: >-
   A jsPsych plugin for Repeated Masking Suppression (RMS) and breaking RMS
   (bRMS) paradigms in web-based experiments. Includes plugins for jsPsych 6
